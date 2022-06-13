@@ -6,15 +6,16 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
-ave = 0.5               # 正規化平均
-std = 0.5               # 正規化標準偏差
-batch_size_train = 256  # 学習バッチサイズ
-batch_size_test = 16    # テストバッチサイズ
-val_ratio = 0.2         # データ全体に対する検証データの割合
-epoch_num = 10          # 学習エポック数
+ave = 0.5               # average for normalization
+std = 0.5               # std. for normalization
+batch_size_train = 256  # batch size for training dataset
+batch_size_test = 16    # batch size for test dataset
+val_ratio = 0.2         # ratio of validation data from whole dataset
+epoch_num = 10          # number of training epochs
+
 
 class Net(nn.Module):
-    # ネットワーク構造の定義
+    # define network architecture
     def __init__(self):
         super(Net, self).__init__()
         self.init_conv = nn.Conv2d(3,16,3,padding=1)
@@ -24,7 +25,7 @@ class Net(nn.Module):
         self.fc1 = nn.ModuleList([nn.Linear(16*16*16, 128), nn.Linear(128, 32)])
         self.output_fc = nn.Linear(32, 10)
 
-    # 順方向計算
+    # forward calculation
     def forward(self, x):
         x = F.relu(self.init_conv(x))
         for l,bn in zip(self.conv1, self.bn1):
@@ -36,40 +37,46 @@ class Net(nn.Module):
         x = self.output_fc(x)
         return x
 
+
 def set_GPU():
-    # GPUの設定
+    # GPU settings
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     return device
 
+
 def load_data():
-    # データのロード
+    # load dataset
     transform = transforms.Compose([transforms.ToTensor(),transforms.Normalize((ave,),(std,))])
     train_set = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     test_set = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-    # 検証データのsplit
+    # split validation data
     n_samples = len(train_set)
     val_size = int(n_samples * val_ratio)
     train_set, val_set = torch.utils.data.random_split(train_set, [(n_samples-val_size), val_size])
 
-    # DataLoaderの定義
+    # generate data loader
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size_train, shuffle=True, num_workers=2)
     val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size_train, shuffle=False, num_workers=2)
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size_test, shuffle=False, num_workers=2)
 
     return train_loader, test_loader, val_loader
 
+
 def train():
+    # basic settings
     device = set_GPU()
     train_loader, test_loader, val_loader = load_data()
     model = Net()
     model.to(device)
 
+    # criterion, optimizer, scheduler
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=5, verbose=True)
 
+    # training process
     min_loss = 999999999
     print("training start")
     for epoch in range(epoch_num):
@@ -77,35 +84,35 @@ def train():
         val_loss = 0.0
         train_batches = 0
         val_batches = 0
-        model.train()   # 訓練モード
-        for i, data in enumerate(train_loader):   # バッチ毎に読み込む
+        model.train()   # train mode
+        for i, data in enumerate(train_loader):   # load every batch
             inputs, labels = data[0].to(device), data[1].to(device) # data は [inputs, labels] のリスト
 
-            # 勾配のリセット
+            # reset gradients
             optimizer.zero_grad()
 
-            outputs = model(inputs)    # 順方向計算
-            loss = criterion(outputs, labels)   # 損失の計算
-            loss.backward()                     # 逆方向計算(勾配計算)
-            optimizer.step()                    # パラメータの更新
+            outputs = model(inputs)    # forward calculation
+            loss = criterion(outputs, labels)   # calculate loss
+            loss.backward()                     # backpropagation
+            optimizer.step()                    # update parameters
 
-            # 履歴の累積
+            # accumulate loss
             train_loss += loss.item()
             train_batches += 1
 
-        # validation_lossの計算
-        model.eval()    # 推論モード
+        # validation loss calculation
+        model.eval()    # evaluation mode
         with torch.no_grad():
-            for i, data in enumerate(val_loader):   # バッチ毎に読み込む
+            for i, data in enumerate(val_loader):   # load every batch
                 inputs, labels = data[0].to(device), data[1].to(device) # data は [inputs, labels] のリスト
-                outputs = model(inputs)               # 順方向計算
-                loss = criterion(outputs, labels)   # 損失の計算
+                outputs = model(inputs)               # forward calculation
+                loss = criterion(outputs, labels)   # calculate loss
 
-                # 履歴の累積
+                # accumulate loss
                 val_loss += loss.item()
                 val_batches += 1
 
-        # 履歴の出力
+        # output history
         print('epoch %d train_loss: %.10f' %
               (epoch + 1,  train_loss/train_batches))
         print('epoch %d val_loss: %.10f' %
@@ -114,16 +121,16 @@ def train():
         with open("history.csv",'a') as f:
             print(str(epoch+1) + ',' + str(train_loss/train_batches) + ',' + str(val_loss/val_batches),file=f)
 
-        # 最良モデルの保存
+        # save the best model
         if min_loss > val_loss/val_batches:
             min_loss = val_loss/val_batches
             PATH = "best.pth"
             torch.save(model.state_dict(), PATH)
 
-        # 学習率の動的変更
+        # update learning rate
         scheduler.step(val_loss/val_batches)
 
-    # 最終エポックのモデル保存
+    # save the latest model
     print("training finished")
     PATH = "lastepoch.pth"
     torch.save(model.state_dict(), PATH)
