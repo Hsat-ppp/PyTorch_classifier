@@ -1,1 +1,4 @@
 /data/cifar-10-python.tar.gz
+/training.log
+/history.csv
+/best.pth

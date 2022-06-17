@@ -1,9 +1,13 @@
+import logging
+
 import torch
 import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+
+logger = logging.getLogger('info_logger')
 
 ave = 0.5               # average for normalization
 std = 0.5               # std. for normalization

@@ -1,9 +1,14 @@
+import logging
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tqdm
 
 from PyTorch_classifier.utils.utils import load_data, set_GPU
 from PyTorch_classifier.model.CNN_based_model import BasicCNNClassifier
+
+logger = logging.getLogger('info_logger')
 
 epoch_num = 10          # number of training epochs
 
@@ -22,14 +27,14 @@ def train():
 
     # training process
     min_loss = 999999999
-    print("training start")
+    logger.info('training start')
     for epoch in range(epoch_num):
         train_loss = 0.0
         val_loss = 0.0
         train_batches = 0
         val_batches = 0
         model.train()   # train mode
-        for i, data in enumerate(train_loader):   # load every batch
+        for i, data in enumerate(tqdm.tqdm(train_loader)):   # load every batch
             inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
 
             # reset gradients
@@ -47,7 +52,7 @@ def train():
         # validation loss calculation
         model.eval()    # evaluation mode
         with torch.no_grad():
-            for i, data in enumerate(val_loader):   # load every batch
+            for i, data in enumerate(tqdm.tqdm(val_loader)):   # load every batch
                 inputs, labels = data[0].to(device), data[1].to(device) # data は [inputs, labels] のリスト
                 outputs = model(inputs)               # forward calculation
                 loss = criterion(outputs, labels)   # calculate loss
@@ -75,6 +80,6 @@ def train():
         scheduler.step(val_loss/val_batches)
 
     # save the latest model
-    print("training finished")
+    logger.info('training end')
     PATH = "lastepoch.pth"
     torch.save(model.state_dict(), PATH)
