@@ -2,6 +2,7 @@ import json
 import logging.config
 
 import PyTorch_classifier.controller.classifier_controller
+import PyTorch_classifier.utils.utils
 
 # load logging config
 with open('log_config.json', 'r') as f:
