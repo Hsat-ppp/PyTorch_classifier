@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from PyTorch_classifier.model.CNN_based_model import BasicCNNClassifier
+import PyTorch_classifier.model.CNN_based_model
 import PyTorch_classifier.model.trainer
-from PyTorch_classifier.utils.utils import load_data, set_GPU
+from PyTorch_classifier.utils.utils import load_data, set_GPU, set_seed_num
 
 
 def set_argparser_options():
@@ -23,6 +23,8 @@ def set_argparser_options():
                         help='patience epochs for learning rate reducer.')
     parser.add_argument('-r', '--ratio_of_validation_data', default=0.2, type=float,
                         help='ratio of validation data to entire training data.')
+    parser.add_argument('-s', '--seed_num', type=int,
+                        help='seed number for reproduction.')
     parser.add_argument('-q', '--quiet', action='store_true',
                         help='if set, we disables progress bar.')
     return parser
@@ -49,8 +51,11 @@ def evaluate_model():
     args = parser.parse_args()
     check_args(args)
 
+    # set seed num
+    set_seed_num(args.seed_num)
+
     # define model and trainer
-    model = BasicCNNClassifier()
+    model = PyTorch_classifier.model.CNN_based_model.BasicCNNClassifier()
     trainer = PyTorch_classifier.model.trainer.ModelTrainer(model, 'history.csv', 'best.pth')
 
     # load data

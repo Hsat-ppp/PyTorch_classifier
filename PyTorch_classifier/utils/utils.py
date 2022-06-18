@@ -1,14 +1,31 @@
 import logging
+import os
+import random
 
+import numpy as np
 import torch
+import torch.backends.cudnn
+import torch.utils.data
 import torchvision
 import torchvision.transforms as transforms
 import tqdm
 
-logger = logging.getLogger('info_logger')
+logger = logging.getLogger('utils')
 
 ave = 0.5               # average for normalization
 std = 0.5               # std. for normalization
+
+
+def set_seed_num(seed_num):
+    if seed_num is None:
+        seed_num = np.random.randint(0, (2 ** 30) - 1)
+    np.random.seed(seed_num)
+    random.seed(seed_num)
+    torch.manual_seed(seed_num)
+    torch.cuda.manual_seed(seed_num)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ['PYTHONHASHSEED'] = str(seed_num)
 
 
 def set_GPU():

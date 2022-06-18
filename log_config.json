@@ -32,6 +32,11 @@
             "level": "INFO",
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": false
+        },
+        "utils": {
+            "level": "INFO",
+            "handlers": ["consoleHandler", "fileHandler"],
+            "propagate": false
         }
     },
 
