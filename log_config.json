@@ -28,7 +28,7 @@
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": false
         },
-        "info_logger": {
+        "trainer": {
             "level": "INFO",
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": false
