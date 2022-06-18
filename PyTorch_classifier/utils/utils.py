@@ -26,6 +26,8 @@ def set_seed_num(seed_num):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     os.environ['PYTHONHASHSEED'] = str(seed_num)
+    with open('seed_num.csv', 'w') as f:
+        print(seed_num, sep=',', file=f)
 
 
 def set_GPU():
