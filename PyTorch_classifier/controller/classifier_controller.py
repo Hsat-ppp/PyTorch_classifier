@@ -1,4 +1,6 @@
 import argparse
+import json
+import logging
 
 import torch
 import torch.nn as nn
@@ -7,6 +9,8 @@ import torch.optim as optim
 import PyTorch_classifier.model.CNN_based_model
 import PyTorch_classifier.model.trainer
 from PyTorch_classifier.utils.utils import load_data, set_GPU, set_seed_num
+
+logger = logging.getLogger('controller')
 
 
 def set_argparser_options():
@@ -50,6 +54,11 @@ def evaluate_model():
     parser = set_argparser_options()
     args = parser.parse_args()
     check_args(args)
+    # save args
+    logger.info('args options')
+    logger.info(args.__dict__)
+    with open('args.json', 'w') as f:
+        json.dump(args.__dict__, f, indent=4)
 
     # set seed num
     set_seed_num(args.seed_num)

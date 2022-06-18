@@ -3,7 +3,7 @@
     "disable_existing_loggers": false,
     "formatters": {
         "simple": {
-            "format": "%(asctime)s %(name)s:%(lineno)s %(funcName)s [%(levelname)s]: %(message)s"
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         }
     },
 
@@ -24,6 +24,11 @@
 
     "loggers": {
         "__main__": {
+            "level": "INFO",
+            "handlers": ["consoleHandler", "fileHandler"],
+            "propagate": false
+        },
+        "controller": {
             "level": "INFO",
             "handlers": ["consoleHandler", "fileHandler"],
             "propagate": false
