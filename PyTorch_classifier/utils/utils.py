@@ -14,9 +14,14 @@ logger = logging.getLogger('utils')
 
 ave = 0.5               # average for normalization
 std = 0.5               # std. for normalization
+INF = 1e+30
 
 
 def set_seed_num(seed_num):
+    """set seed number.
+    set seed number to python-random, numpy, torch (torch, cuda, backends), and os environ for reproductivity
+    :param: seed number to set
+    """
     if seed_num is None:
         seed_num = np.random.randint(0, (2 ** 30) - 1)
     np.random.seed(seed_num)
@@ -28,16 +33,24 @@ def set_seed_num(seed_num):
     os.environ['PYTHONHASHSEED'] = str(seed_num)
     with open('seed_num.csv', 'w') as f:
         print(seed_num, sep=',', file=f)
+    return
 
 
 def set_GPU():
-    # GPU settings
+    """get GPU settings and return.
+    :return: obtained device
+    """
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     logger.info('using processor: {}'.format(device))
     return device
 
 
 def load_data(batch_size, val_ratio):
+    """load data and generate loader iterators.
+    :param batch_size:
+    :param val_ratio:
+    :return: train, test, and val loader.
+    """
     # load dataset
     transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((ave,), (std,))])
     train_set = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
@@ -57,6 +70,11 @@ def load_data(batch_size, val_ratio):
 
 
 def make_enum_loader(loader, is_quiet):
+    """generate loader with enumerate and also tqdm progress bar.
+    :param loader:
+    :param is_quiet:
+    :return: loader
+    """
     if is_quiet:
         enum_loader = enumerate(loader)
     else:

@@ -3,39 +3,84 @@ import logging
 import torch
 import torch.optim as optim
 
-from PyTorch_classifier.utils.utils import make_enum_loader
+from PyTorch_classifier.utils.utils import make_enum_loader, INF
 
 logger = logging.getLogger('trainer')
 
 
 class ModelTrainer(object):
+    """
+    model training class.
+    manage training via set loader, criterion, and optimizer.
+    """
     def __init__(self, model, history_file_name, output_model_file_name):
+        """init function.
+        :param model:
+        :param history_file_name:
+        :param output_model_file_name:
+        """
         self.model = model
         self.train_loader = None
         self.test_loader = None
         self.val_loader = None
         self.history_file_name = history_file_name
         self.output_model_file_name = output_model_file_name
+        self.criterion = None
+        self.optimizer = None
+        self.best_loss_value = INF
+        self.test_loss_value = INF
 
     def set_loader(self, train_loader, test_loader, val_loader):
+        """set data loader
+        :param train_loader:
+        :param test_loader:
+        :param val_loader:
+        :return:
+        """
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.val_loader = val_loader
 
-    def calculate_loss(self, inputs, labels, criterion):
+    def set_criterion(self, criterion):
+        """set criterion
+        :param criterion:
+        :return:
+        """
+        self.criterion = criterion
+
+    def set_optimizer(self, optimizer):
+        """set optimizer.
+        :param optimizer:
+        :return:
+        """
+        self.optimizer = optimizer
+
+    def calculate_loss(self, inputs, labels):
+        """calculate loss. please change this properly if criterion is changed.
+        :param inputs:
+        :param labels:
+        :return:
+        """
         outputs = self.model(inputs)  # forward calculation
-        loss = criterion(outputs, labels)  # calculate loss
+        loss = self.criterion(outputs, labels)  # calculate loss
         return loss
 
-    def train(self, device, criterion, optimizer, num_of_epochs, patience, is_quiet=False):
+    def train(self, device, num_of_epochs, patience, is_quiet=False):
+        """run training.
+        :param device:
+        :param num_of_epochs:
+        :param patience:
+        :param is_quiet:
+        :return:
+        """
         # settings
         self.model.to(device)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=patience, verbose=True)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=patience, verbose=True)
         with open("history.csv", 'w'):
             pass
 
         # training process
-        min_loss = 1E+30
+        self.best_loss_value = INF
         logger.info('training start')
         for epoch in range(num_of_epochs):
             train_loss = 0.0
@@ -48,15 +93,15 @@ class ModelTrainer(object):
             for i, data in enum_loader:  # load every batch
                 inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
                 # reset gradients
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 # calculation
-                loss = self.calculate_loss(inputs, labels, criterion)
+                loss = self.calculate_loss(inputs, labels)
                 # accumulate loss
                 train_loss += loss.item()
                 train_batches += 1
                 # update
                 loss.backward()  # backpropagation
-                optimizer.step()  # update parameters
+                self.optimizer.step()  # update parameters
 
             # validation loss calculation
             self.model.eval()  # evaluation mode
@@ -65,7 +110,7 @@ class ModelTrainer(object):
             with torch.no_grad():
                 for i, data in enum_loader:  # load every batch
                     inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
-                    loss = self.calculate_loss(inputs, labels, criterion)
+                    loss = self.calculate_loss(inputs, labels)
                     # accumulate loss
                     val_loss += loss.item()
                     val_batches += 1
@@ -77,8 +122,8 @@ class ModelTrainer(object):
                 print(epoch + 1, train_loss / train_batches, val_loss / val_batches, sep=',', file=f)
 
             # save the best model
-            if min_loss > val_loss / val_batches:
-                min_loss = val_loss / val_batches
+            if self.best_loss_value > val_loss / val_batches:
+                self.best_loss_value = val_loss / val_batches
                 PATH = self.output_model_file_name
                 torch.save(self.model.state_dict(), PATH)
 
@@ -87,7 +132,13 @@ class ModelTrainer(object):
 
         logger.info('training end')
 
-    def test(self, device, criterion, is_quiet, pre_trained_file=None):
+    def test(self, device, is_quiet, pre_trained_file=None):
+        """run test. this need pre-trained weight file.
+        :param device:
+        :param is_quiet:
+        :param pre_trained_file:
+        :return:
+        """
         if pre_trained_file is None:
             pre_trained_file = self.output_model_file_name
         # model setting
@@ -104,10 +155,11 @@ class ModelTrainer(object):
         with torch.no_grad():
             for i, data in enum_loader:  # load every batch
                 inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
-                loss = self.calculate_loss(inputs, labels, criterion)
+                loss = self.calculate_loss(inputs, labels)
                 # accumulate loss
                 test_loss += loss.item()
                 test_batches += 1
 
         logger.info('test loss: {}'.format(test_loss / test_batches))
         logger.info('test end')
+        self.best_loss_value = test_loss / test_batches

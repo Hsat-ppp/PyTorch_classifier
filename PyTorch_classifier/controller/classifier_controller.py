@@ -14,6 +14,9 @@ logger = logging.getLogger('controller')
 
 
 def set_argparser_options():
+    """set argparser options
+    :return: ArgumentParser object
+    """
     parser = argparse.ArgumentParser(description='''
                                     This is a CNN-based classifier code for CIFAR10.
                                     ''')
@@ -35,6 +38,10 @@ def set_argparser_options():
 
 
 def check_args(args):
+    """check args. if something is wrong, assert error will arise.
+    :param args: args to be checked
+    :return:
+    """
     assert args.num_of_epochs >= 1, 'Option "num_of_epochs" need to be positive. ' \
                                     'Got: {}'.format(args.num_of_epochs)
     assert args.batch_size >= 1, 'Option "batch_size" need to be positive. ' \
@@ -50,6 +57,15 @@ def check_args(args):
 
 
 def evaluate_model():
+    """evaluate a model.
+    including:
+        :parse args
+        :obtain model from model folder
+        :load data
+        :define criterion and optimization strategy
+        :run training
+    :return:
+    """
     # get args
     parser = set_argparser_options()
     args = parser.parse_args()
@@ -71,13 +87,13 @@ def evaluate_model():
     train_loader, test_loader, val_loader = load_data(args.batch_size, args.ratio_of_validation_data)
     trainer.set_loader(train_loader, test_loader, val_loader)
 
-    # define device and model to be evaluated
+    # define device
     device = set_GPU()
 
     # set criterion
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    trainer.set_criterion(nn.CrossEntropyLoss())
+    trainer.set_optimizer(optim.Adam(model.parameters(), lr=args.learning_rate))
 
     # run training and test
-    trainer.train(device, criterion, optimizer, args.num_of_epochs, args.patience_for_lr_reducer, args.quiet)
-    trainer.test(device, criterion, args.quiet)
+    trainer.train(device, args.num_of_epochs, args.patience_for_lr_reducer, args.quiet)
+    trainer.test(device, args.quiet)

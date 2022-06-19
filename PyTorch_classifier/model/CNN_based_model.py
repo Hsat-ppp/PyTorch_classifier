@@ -4,8 +4,13 @@ import torch.nn.functional as F
 
 
 class BasicCNNClassifier(nn.Module):
-    # define network architecture
+    """
+    basic CNN classifier model.
+    """
     def __init__(self):
+        """
+        init function which defines network architecture
+        """
         super().__init__()
         self.init_conv = nn.Conv2d(3, 16, 3, padding=1)
         self.conv1 = nn.ModuleList([nn.Conv2d(16, 16, 3, padding=1) for _ in range(3)])
@@ -14,8 +19,12 @@ class BasicCNNClassifier(nn.Module):
         self.fc1 = nn.ModuleList([nn.Linear(16*16*16, 128), nn.Linear(128, 32)])
         self.output_fc = nn.Linear(32, 10)
 
-    # forward calculation
     def forward(self, x):
+        """
+        forward calculation
+        :param x: input img data
+        :return: classification
+        """
         x = F.relu(self.init_conv(x))
         for l, bn in zip(self.conv1, self.bn1):
             x = F.relu(bn(l(x)))

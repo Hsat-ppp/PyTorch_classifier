@@ -1,3 +1,4 @@
+"""Main function for training, test, etc."""
 import json
 import logging.config
 
