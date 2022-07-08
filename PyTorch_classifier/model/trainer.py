@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import torch
 import torch.optim as optim
 
@@ -152,6 +153,8 @@ class ModelTrainer(object):
 
         # test
         enum_loader = make_enum_loader(self.test_loader, is_quiet)
+        ground_truth = []
+        predicted = []
         with torch.no_grad():
             for i, data in enum_loader:  # load every batch
                 inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
@@ -159,7 +162,18 @@ class ModelTrainer(object):
                 # accumulate loss
                 test_loss += loss.item()
                 test_batches += 1
+                # preserve labels
+                ground_truth.append(labels.detach().to('cpu').clone())
+                outputs = self.model(inputs)
+                predicted.append(outputs.detach().to('cpu').clone())
 
         logger.info('test loss: {}'.format(test_loss / test_batches))
-        logger.info('test end')
         self.best_loss_value = test_loss / test_batches
+
+        # show prediction
+        ground_truth = torch.cat(ground_truth)
+        predicted = torch.cat(predicted)
+        _, predicted = torch.max(predicted, dim=1)
+        accuracy = torch.sum(ground_truth == predicted) / ground_truth.shape[0]
+        logger.info('accuracy: {}%'.format(accuracy * 100.0))
+        logger.info('test end')

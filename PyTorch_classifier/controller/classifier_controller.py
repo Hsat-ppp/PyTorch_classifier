@@ -5,6 +5,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torchsummary
 
 import PyTorch_classifier.model.CNN_based_model
 import PyTorch_classifier.model.trainer
@@ -20,13 +21,13 @@ def set_argparser_options():
     parser = argparse.ArgumentParser(description='''
                                     This is a CNN-based classifier code for CIFAR10.
                                     ''')
-    parser.add_argument('-e', '--num_of_epochs', default=15, type=int,
+    parser.add_argument('-e', '--num_of_epochs', default=30, type=int,
                         help='number of training epochs')
     parser.add_argument('-b', '--batch_size', default=256, type=int,
                         help='batch size.')
     parser.add_argument('-l', '--learning_rate', default=0.001, type=float,
                         help='initial learning rate.')
-    parser.add_argument('-p', '--patience_for_lr_reducer', default=5, type=int,
+    parser.add_argument('-p', '--patience_for_lr_reducer', default=3, type=int,
                         help='patience epochs for learning rate reducer.')
     parser.add_argument('-r', '--ratio_of_validation_data', default=0.2, type=float,
                         help='ratio of validation data to entire training data.')
@@ -81,6 +82,7 @@ def evaluate_model():
 
     # define model and trainer
     model = PyTorch_classifier.model.CNN_based_model.BasicCNNClassifier()
+    torchsummary.summary(model, (3, 32, 32))
     trainer = PyTorch_classifier.model.trainer.ModelTrainer(model, 'history.csv', 'best.pth')
 
     # load data
