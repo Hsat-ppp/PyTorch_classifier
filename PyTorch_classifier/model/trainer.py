@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import torch
 import torch.optim as optim
+import wandb
 
 from PyTorch_classifier.utils.utils import make_enum_loader, INF
 
@@ -14,11 +15,13 @@ class ModelTrainer(object):
     model training class.
     manage training via set loader, criterion, and optimizer.
     """
-    def __init__(self, model, history_file_name, output_model_file_name):
+    def __init__(self, model, history_file_name, output_model_file_name,
+                 enable_wandb=False):
         """init function.
         :param model:
         :param history_file_name:
         :param output_model_file_name:
+        :param enable_wandb: If you want to use wandb, set True. You'll be asked for your API key.
         """
         self.model = model
         self.train_loader = None
@@ -30,6 +33,7 @@ class ModelTrainer(object):
         self.optimizer = None
         self.best_loss_value = INF
         self.test_loss_value = INF
+        self.enable_wandb = enable_wandb
 
     def set_loader(self, train_loader, test_loader, val_loader):
         """set data loader
@@ -79,6 +83,8 @@ class ModelTrainer(object):
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=patience, verbose=True)
         with open("history.csv", 'w'):
             pass
+        if self.enable_wandb:
+            wandb.init('pytorch_classifier_cifar10')
 
         # training process
         self.best_loss_value = INF
@@ -121,6 +127,10 @@ class ModelTrainer(object):
             logger.info('epoch {0} val_loss: {1}'.format(epoch + 1, val_loss / val_batches))
             with open("history.csv", 'a') as f:
                 print(epoch + 1, train_loss / train_batches, val_loss / val_batches, sep=',', file=f)
+            if self.enable_wandb:
+                wandb.log({'train_loss': train_loss / train_batches,
+                           'val_loss': val_loss / val_batches,
+                           })
 
             # save the best model
             if self.best_loss_value > val_loss / val_batches:
