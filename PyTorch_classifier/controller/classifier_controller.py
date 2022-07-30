@@ -5,7 +5,7 @@ import logging
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torchsummary
+# import torchsummary
 
 import PyTorch_classifier.model.CNN_based_model
 import PyTorch_classifier.model.trainer
@@ -80,22 +80,22 @@ def evaluate_model():
     # set seed num
     set_seed_num(args.seed_num)
 
+    # define device
+    device = set_GPU()
+
     # define model and trainer
     model = PyTorch_classifier.model.CNN_based_model.BasicCNNClassifier()
-    torchsummary.summary(model, (3, 32, 32))
-    trainer = PyTorch_classifier.model.trainer.ModelTrainer(model, 'history.csv', 'best.pth')
+    # torchsummary.summary(model, (3, 32, 32))
+    trainer = PyTorch_classifier.model.trainer.ModelTrainer(model, device, 'history.csv', 'best.pth')
 
     # load data
     train_loader, test_loader, val_loader = load_data(args.batch_size, args.ratio_of_validation_data)
     trainer.set_loader(train_loader, test_loader, val_loader)
-
-    # define device
-    device = set_GPU()
 
     # set criterion
     trainer.set_criterion(nn.CrossEntropyLoss())
     trainer.set_optimizer(optim.Adam(model.parameters(), lr=args.learning_rate))
 
     # run training and test
-    trainer.train(device, args.num_of_epochs, args.patience_for_lr_reducer, args.quiet)
-    trainer.test(device, args.quiet)
+    trainer.train(args.num_of_epochs, args.patience_for_lr_reducer, args.quiet)
+    trainer.test(args.quiet)
