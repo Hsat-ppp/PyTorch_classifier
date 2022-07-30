@@ -14,13 +14,15 @@ class ModelTrainer(object):
     model training class.
     manage training via set loader, criterion, and optimizer.
     """
-    def __init__(self, model, history_file_name, output_model_file_name):
+    def __init__(self, model, device, history_file_name, output_model_file_name):
         """init function.
         :param model:
+        :param device:
         :param history_file_name:
         :param output_model_file_name:
         """
         self.model = model
+        self.device = device
         self.train_loader = None
         self.test_loader = None
         self.val_loader = None
@@ -66,16 +68,15 @@ class ModelTrainer(object):
         loss = self.criterion(outputs, labels)  # calculate loss
         return loss
 
-    def train(self, device, num_of_epochs, patience, is_quiet=False):
+    def train(self, num_of_epochs, patience, is_quiet=False):
         """run training.
-        :param device:
         :param num_of_epochs:
         :param patience:
         :param is_quiet:
         :return:
         """
         # settings
-        self.model.to(device)
+        self.model.to(self.device)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=patience, verbose=True)
         with open("history.csv", 'w'):
             pass
@@ -92,7 +93,7 @@ class ModelTrainer(object):
             self.model.train()  # train mode
             enum_loader = make_enum_loader(self.train_loader, is_quiet)
             for i, data in enum_loader:  # load every batch
-                inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
+                inputs, labels = data[0].to(self.device), data[1].to(self.device)  # data は [inputs, labels] のリスト
                 # reset gradients
                 self.optimizer.zero_grad()
                 # calculation
@@ -110,7 +111,7 @@ class ModelTrainer(object):
             enum_loader = make_enum_loader(self.val_loader, is_quiet)
             with torch.no_grad():
                 for i, data in enum_loader:  # load every batch
-                    inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
+                    inputs, labels = data[0].to(self.device), data[1].to(self.device)  # data は [inputs, labels] のリスト
                     loss = self.calculate_loss(inputs, labels)
                     # accumulate loss
                     val_loss += loss.item()
@@ -133,9 +134,8 @@ class ModelTrainer(object):
 
         logger.info('training end')
 
-    def test(self, device, is_quiet, pre_trained_file=None):
+    def test(self, is_quiet, pre_trained_file=None):
         """run test. this need pre-trained weight file.
-        :param device:
         :param is_quiet:
         :param pre_trained_file:
         :return:
@@ -157,7 +157,7 @@ class ModelTrainer(object):
         predicted = []
         with torch.no_grad():
             for i, data in enum_loader:  # load every batch
-                inputs, labels = data[0].to(device), data[1].to(device)  # data は [inputs, labels] のリスト
+                inputs, labels = data[0].to(self.device), data[1].to(self.device)  # data は [inputs, labels] のリスト
                 loss = self.calculate_loss(inputs, labels)
                 # accumulate loss
                 test_loss += loss.item()
