@@ -54,7 +54,7 @@ class BasicCNNClassifier(nn.Module):
         # self.blocks = nn.ModuleList([CNNBlock(32, 64, 2), CNNBlock(64, 128, 2), CNNBlock(128, 256, 2)])
         self.blocks = nn.ModuleList([CNNBlockSkipConnection(32, 64, 2), CNNBlockSkipConnection(64, 128, 2), CNNBlockSkipConnection(128, 256, 2)])
         self.fc1 = nn.ModuleList([nn.Linear(256*4*4, 1024), nn.Linear(1024, 128)])
-        self.do1 = nn.ModuleList([nn.Dropout(p=0.2) for _ in range(len(self.fc1))])
+        self.do1 = nn.ModuleList([nn.Dropout(p=0.5) for _ in range(len(self.fc1))])
         self.output_fc = nn.Linear(128, 10)
 
     def forward(self, x):
