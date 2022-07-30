@@ -83,7 +83,7 @@ def evaluate_model():
     # define model and trainer
     model = PyTorch_classifier.model.CNN_based_model.BasicCNNClassifier()
     torchsummary.summary(model, (3, 32, 32))
-    trainer = PyTorch_classifier.model.trainer.ModelTrainer(model, 'history.csv', 'best.pth', True)
+    trainer = PyTorch_classifier.model.trainer.ModelTrainer(model, 'history.csv', 'best.pth')
 
     # load data
     train_loader, test_loader, val_loader = load_data(args.batch_size, args.ratio_of_validation_data)
